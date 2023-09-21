@@ -1,0 +1,61 @@
+#!/opt/homebrew/bin/python3
+from termcolor import colored
+from sys import argv
+
+if len(argv) != 3:
+    print(colored("Error: invalid parameters..",'red'))
+    print(colored("Usage:","blue"))
+    print(colored("\t./marlinConfigDiff.py [ORIGINAL_FILE] [NEW_FILE]", "blue"))
+    exit(-1)
+
+
+
+originalFile = argv[1]
+newFile = argv[2]
+
+newFileDefines = []
+orgFileDefines = []
+
+def compare(original, new):
+    if original['enabled'] == new['enabled'] and original['value'] == new['value']:
+        return True
+    return False
+
+with open(originalFile, 'r') as of:
+    for l in of :
+        if "#define" in l:
+            temp = l.replace("\n","").split(" ")
+            temp = df = [a for a in temp if len(a) > 0 ]
+            value = "None"
+            enabled = True
+            if temp[0] == '//#defined':
+                enabled = False
+            if len(temp) > 2 and temp[2] != '//' :
+                value = temp[2]
+            orgFileDefines.append({"key": temp[1], "value": value, "enabled": enabled})
+            
+with open(newFile, 'r') as nf:
+    for l in nf :
+        if "#define" in l:
+            temp = l.replace("\n","").split(" ")
+            temp = df = [a for a in temp if len(a) > 0 ]
+            value = "None"
+            enabled = True
+            if temp[0] == '//#defined':
+                enabled = True
+            if len(temp) > 2 and temp[2] != '//':
+                value = temp[2]
+            newFileDefines.append({"key": temp[1], "value": value, "enabled": enabled})
+
+for newDefine in newFileDefines:
+    oldDefine = [ odf for odf in orgFileDefines if odf['key'] == newDefine['key'] ]
+    if len(oldDefine) == 0:
+        #print(colored( newDefine['key'] + " is not present in original file.",'blue')) 
+        continue
+    oldDefine = oldDefine.pop()
+    result = compare(oldDefine, newDefine)
+    if not result:
+        print(colored (newDefine['key'] + ' Hasn\'t same value in original file.', 'red' ))
+        print(colored("\t => ORIGINAL: " + oldDefine['value'] + " NEW: " + newDefine['value'] ))
+    #else :
+    #    print(colored( newDefine['key'] + ' has same value.', 'green' ))
